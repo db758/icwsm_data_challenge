@@ -8,7 +8,7 @@ out <- prepDocuments(processed$documents, processed$vocab, processed$meta)
 docs <- out$documents
 vocab <- out$vocab
 meta <-out$meta
-hatespeechFit <- stm(documents = out$documents, vocab = out$vocab,K=25, max.em.its = 200, data = out$meta, init.type = "Spectral") 
+hatespeechFit <- stm(documents = out$documents, vocab = out$vocab,K=25, max.em.its = 200, data = out$meta, init.type = "Spectral") #K=25, 27 iterations to converge
 labelTopics(hatespeechFit)
 plot.STM(hatespeechFit,type="summary")
 plot.STM(hatespeechFit, type = "labels")
