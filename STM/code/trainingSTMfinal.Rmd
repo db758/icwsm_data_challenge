@@ -1,0 +1,117 @@
+---
+title: "hate_speech_estm"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(stm)
+
+setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge")
+data <- read.csv('race_classifier/data/founta_race_annotated_2.csv') 
+data <- data[!(data$label == "spam"),]
+data <- data[!(data$afam == -9),]
+data <- droplevels(data)
+# TODO: Consider recoding such that we have two categories hateful/abusive vs. normal
+d = data %>% select(cleaned_text, label, afam)
+# TODO: Check no odd special characters are getting through.
+
+```
+
+## Preprocessing
+
+```{r preprocess, echo=TRUE}
+processed <- textProcessor(d$cleaned_text, metadata = d)
+out <- prepDocuments(processed$documents, processed$vocab, processed$meta, lower.thres = 0.05, subsample = 10000) # TODO: Remove subsample when complete
+```
+
+## Estimating an initial model to check everything is working
+
+```{r preprocess, echo=TRUE}
+
+fit <- stm(documents = out$documents, vocab = out$vocab, K=20, 
+           prevalence =~ label * s(afam), content =~ label,
+           max.em.its = 100, data = out$meta, init.type = "Spectral"
+           )
+# Model with 75 em steps terminates before convergencE (only data.label as prevalence, no content covariates)
+# The model with  K=20, prevalence =~ data.label + s(data.white), content =~ data.label converged after 15 iterations.
+# Now I'm running a model with an interaction between label and prob_afam. It too 22 iterations.
+```
+## Analyzing the initial model
+```{r initial analysis, echo=TRUE}
+#thoughts1 <- findThoughts(fit, texts = docs, n = 2)
+#print(thoughts1) # TODO: Find thoughts requires texts. I need to figure out how to do this in this case when the texts are truncated.
+# Plotting topic proportions
+plot(fit, type = "summary", xlim = c(0, .3))
+# Looking at words by topic
+labelTopics(fit)
+# Plotting correlation
+out.corr <- topicCorr(fit)
+plot(out.corr)
+```
+
+
+## Plotting effect of covariate on topic prevalence
+```{r prev plot, echo=TRUE}
+predict_topics<- estimateEffect(formula = 1:20 ~ label, stmobj = fit, metadata = out$meta, uncertainty = "Global")
+summary(predict_topics, topics=c(1,2)) # Summary for the first two topics
+
+# This allows us to see prevalence of different topics in hateful versus normal tweets
+plot(predict_topics, covariate = "label", topics = c(1:20),
+ model = fit, method = "difference",
+ cov.value1 = "hateful", cov.value2 = "normal",
+ xlab = "More Hateful ... More Normal",
+ main = "Effect of Hateful vs. Normal",
+ xlim = c(-.1, .1), labeltype = "custom")
+
+
+# Now the effect of AFAM
+predict_topics.afam<- estimateEffect(formula = 1:20 ~ afam, stmobj = fit, metadata = out$meta, uncertainty = "Global")
+summary(predict_topics.afam, topics=c(1,2)) # Summary for the first two topics
+
+# This allows us to see expected proportion of a topic given the probability it is written in AAE. This will allow us to identify topics that are high in AAE usage.
+plot(predict_topics.afam, covariate = "afam", topics=1,
+ model = fit, method = "continuous",  printlegend=FALSE,
+ xaxt = "n",
+ xlab = "Afam",
+ main = "Effect of Afam for Topic 1",
+labeltype = "custom")
+
+
+### Here is a more complex plot where I allow the slope to vary for type
+prep <- estimateEffect(1:20 ~ label * afam, fit, metadata = out$meta,
+                       uncertainty = "Global")
+#par(mfrow=c(2,1))
+t=1
+plot(prep, covariate = "afam", topics=t, model = fit, method = "continuous", xlab = "Prob. Afam", moderator = "label", moderator.value = "hateful", linecol = "blue", ylim = c(0, .12), printlegend = F)
+par(new=TRUE)
+plot(prep, covariate = "afam", topics = t, model = fit, method = "continuous", xlab = "Prob. Afam", moderator = "label", moderator.value = "abusive", linecol = "red", ylim = c(0, .12), printlegend = F)
+par(new=TRUE)
+plot(prep, covariate = "afam", topics = t, model = fit, method = "continuous", xlab = "Prob. Afam", moderator = "label", moderator.value = "normal", linecol = "green", ylim = c(0, .12), printlegend = F)
+
+legend(x="bottomright", y = 0.05, c("hateful", "abusive", "normal"), lwd = 3, col = c("blue", "red", "green"))
+# This plot shows, for a given topic, the expect proportion of the topic by the probability the tweet is written in AAE by the hate classification of tweets. This will be useful once I have identified topics of interest.
+
+# Now how does topic content vary?
+plot(fit, type="perspectives", topics=16, covarlevels = c("hateful","normal"))
+```
+## Estimating k
+
+
+```{r searchk, echo=TRUE}
+set.seed(14850)
+# First trying the Lee-Mimno algorithm without any specified k.
+# This failed whenever I had covariates so I omitted them
+kresult <- searchK(docs, vocab, K = 0,
+                   N = 1000, init.type = "Spectral", cores = 7, data = meta)
+
+# OK, that didn't work well... it picked 97 topics. I think we should stick with something between 15-30. Will run the algorithm again tomorrow.
+```
+
+```{r searchkk, echo=TRUE}
+# Next trying several different values of k
+
+kresult.2 <- searchK(docs, vocab, K = c(15, 20, 25, 30), N = 1000, 
+                   prevalence =~ label * s(afam), 
+                   content =~ label, cores = 7, data = meta)
+```
