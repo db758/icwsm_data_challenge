@@ -27,7 +27,7 @@ d$afam.maj <- ifelse(d$afam>0.5, 1, 0) # Consider using this as a covariate for 
 
 ```{r preprocess, echo=TRUE}
 processed <- textProcessor(d$cleaned_text, metadata = d)
-out <- prepDocuments(processed$documents, processed$vocab, processed$meta, lower.thres = 5)#, subsample = 20000) # TODO: Remove subsample when complete
+out <- prepDocuments(processed$documents, processed$vocab, processed$meta, lower.thres = 5)
 ```
 
 
@@ -35,6 +35,7 @@ out <- prepDocuments(processed$documents, processed$vocab, processed$meta, lower
 
 
 ```{r searchk, echo=TRUE}
+# Commented out so do not run accidentally
 #set.seed(14850)
 # First trying the Lee-Mimno algorithm without any specified k.
 # This failed whenever I had covariates so I omitted them
@@ -81,9 +82,13 @@ save.image(file = "30topicimage.RData")
 ```{r initial analysis, echo=TRUE}
 # Getting texts minus those dropped by text processing
 removed <- c(out$docs.removed,processed$docs.removed)
-thoughts1 <- findThoughts(fit, texts =as.character(d[-removed,]$cleaned_text), topic=30, n = 4)
-print(thoughts1)
-#plotQuote(thoughts1, width = 30, main = "Topic 4")
+for (t in 1:K) {
+thoughts <- findThoughts(fit, texts =as.character(d[-removed,]$cleaned_text), topic=t, n = 10)
+print(labelTopics(fit, topics=t, n=10))
+print('\n')
+print(thoughts)
+print('\n')
+}
 # TODO: Something weird is happening with plot quote. it is showing a list object rather than the document itself. It is still usable but not as a plot
 
 # Plotting topic proportions
@@ -137,7 +142,6 @@ legend(x="topleft", y = 0.05, c("abusive", "normal"), lwd = 3, col = c("red", "b
 }
 # This plot shows, for a given topic, the expect proportion of the topic by the probability the tweet is written in AAE by the hate classification of tweets. This will be useful once I have identified topics of interest.
 # TODO: Pick 4 topics and make a plot showing different trends for all of them. e.g. four versions of this plot in a faceted grid.
-# TODO: Select 4 topics of interest. Topic 4 contains a lot of AAE cursing, topic 13 is the most associated with abusive (seems odd). 20 (feelings) is least abusive, 15 is most neutral (thinking about world). 2 is quite clear, it is about international conflict and is quite hateful. 9 is interesting, possibly song lyrics.
 ```
 
 ```{r content, echo=TRUE}
