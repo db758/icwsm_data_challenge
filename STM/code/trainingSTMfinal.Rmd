@@ -5,11 +5,19 @@ output:
   pdf_document: default
 ---
 
+# Training an STM on the Founta et al. dataset
+
+## Instructions
+
+If you want to load the pretrained model used in the analysis then skip to the cell called load model. If you want to train the model yourself, which takes around one hour on a 2.2GHz Intel Core i7 2014 MacBook Pro with 16GB RAM, then run all cells in the notebook (although the searchk cell is optional). 
+
+### Loading the data
+Note you must change the path to the correct path for the respository on your machine.
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(stm)
 
-setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge")
+setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge") # Change path to the correct path for the icwsm_data_challenge github repository
 data <- read.csv('race_classifier/data/founta_race_annotated_2.csv') 
 data <- data[!(data$label == "spam"),]
 data <- data[!(data$afam == -9),]
@@ -23,31 +31,19 @@ d$label = d$label %>% fct_collapse(abusive = c("hateful", "abusive"))
 d$afam.maj <- ifelse(d$afam>0.5, 1, 0) # Consider using this as a covariate for content (it can only take binary values)
 ```
 
-## Preprocessing
-
+### Preprocessing
+This code reads in the text data and runs basic preprocessing. Stop words, punctuation, and numbers are removed. All text is set to lower case. Terms that occur in fewer than 5 tweets are dropped, as are tweets that do not contain any valid terms.
 ```{r preprocess, echo=TRUE}
 processed <- textProcessor(d$cleaned_text, metadata = d)
 out <- prepDocuments(processed$documents, processed$vocab, processed$meta, lower.thres = 5)
 ```
 
 
-## Estimating k
-
-
+### Estimating k
+This cell can be used to estimate models with different values of K and to compare them on various metrics (see documentation). Note that this takes several hours to run. It is not necessary to run this cell.
 ```{r searchk, echo=TRUE}
-# Commented out so do not run accidentally
-#set.seed(14850)
-# First trying the Lee-Mimno algorithm without any specified k.
-# This failed whenever I had covariates so I omitted them
-#kresult <- searchK(docs, vocab, K = 0,
-#                   N = 1000, init.type = "Spectral", cores = 7, data = meta)
-
-# OK, that didn't work well... it picked 97 topics. I think we should stick with something between 15-30. Will run the algorithm again tomorrow.
-```
-
-
-```{r searchkk, echo=TRUE}
 # Next trying several different values of k
+# Note that this is currently set to run in parallel on 7 cores. Please change this variable if you want to run on a different number of cores or remove it to stop parallel computing.
 set.seed(14850)
 kresult.2 <- searchK(out$documents, out$vocab, K = c(10,20,30,40,50,60), N = 5000, 
                    prevalence =~ label * s(afam), cores = 7, data = out$meta)
@@ -55,7 +51,7 @@ plot(kresult.2)
 # Exclusivity does not work with content covariates. Removed the content covariate from the searchK function.
 ```
 
-## Estimating an initial model to check everything is working
+### Estimating the STM with K=30
 
 ```{r model, echo=TRUE}
 K=30
@@ -63,29 +59,29 @@ fit <- stm(documents = out$documents, vocab = out$vocab, K=K,
            prevalence =~ label * s(afam),
            max.em.its = 100, data = out$meta, init.type = "Spectral", verbose = TRUE
            )
-# ngroups splits the data, it may speed things up although the documentation notes that it is somewhat experimental
-# I have removed the content covariate. I think prevalence should be enough here.
-
-# Notes on previous models
-# Model with 75 em steps terminates before convergencE (only data.label as prevalence, no content covariates)
-# The model with  K=20, prevalence =~ data.label + s(data.white), content =~ data.label converged after 15 iterations.
-# Now I'm running a model with an interaction between label and prob_afam. It too 22 iterations.
 ```
 
-## Storing model
+### Storing model 
+Uncomment these lines if you wish to store the image of the workspace now that the model is trained. This is useful as it means you do not have to retrain the model if RStudio crashes.
 ```{r  store model, echo=TRUE}
-# Commented out so doesn't re-run accidentally
 #setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge/Rimages")
 #save.image(file = "30topicimage.RData")
 ```
 
+### Loading pretrained model.
+You must download the RData image containing the trained model from Google Drive https://drive.google.com/file/d/1jHOwDG8cpC4vL7gDzk65uGz4voTaUL0p/view?usp=sharing and store the file in a folder called ``Rimages'' within the respository. The following cell can then be run to load the image, this contains all of the files output by model training (although it does not contain the results of searckK, which was run separately.)
+
 ```{R load model, echo=TRUE}
-# Now only need to run these lines.
-setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge")
-load(file = "Rimages/30topicimage_copy.RData")
+# Uncomment lines and run to load model
+#setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge")
+#load(file = "Rimages/30topicimage_copy.RData")
 ```
 
-## Analyzing the initial model
+### Analyzing the initial model
+This cell does three things:
+  - For each topic, it prints out the top 10 words, according to various metrics, and the top 10 tweets with the highest topic proportion.
+  - It plots the topic proportions, showing the proportion of documents across the corpus composed of each topic.
+  - It plots the correlation network between topics.
 ```{r initial analysis, echo=TRUE}
 # Getting texts minus those dropped by text processing
 removed <- c(out$docs.removed,processed$docs.removed)
@@ -109,7 +105,10 @@ plot(out.corr)
 ```
 
 
-## Plotting effect of covariate on topic prevalence
+### Plotting effect of covariate on topic prevalence
+This code makes two different plots:
+  - Plots the prevalence of different topics by abusiveness.
+  - Plots the change in topic proportion over the probability a tweet is written in AAE by abusive or normal for all 30 topics.
 ```{r prev plot, echo=TRUE}
 predict_topics<- estimateEffect(formula = 1:K ~ label * afam, stmobj = fit, metadata = out$meta, uncertainty = "Global")
 summary(predict_topics, topics=c(1,2)) # Summary for the first two topics
@@ -121,36 +120,17 @@ plot(predict_topics, covariate = "label", topics = c(1:K),
  main = "Effect of Abusive vs. Normal",
  xlim = c(-.05, .05), labeltype = "custom")
 
-# No need for a separate predict
-# Now the effect of AFAM
-#predict_topics.afam<- estimateEffect(formula = 1:20 ~ afam, stmobj = fit, metadata = out$meta, uncertainty = "Global")
-#summary(predict_topics.afam, topics=c(1,2)) # Summary for the first two topics
 
-# This allows us to see expected proportion of a topic given the probability it is written in AAE. This will allow us to identify topics that are high in AAE usage.
-plot(predict_topics, covariate = "afam", topics=4,
- model = fit, method = "continuous",  printlegend=FALSE,
- xaxt = "n",
- xlab = "Prob. AAE",
- main = "Effect of AAE for Topic 4",
-labeltype = "custom")
-
-
-### Here is a more complex plot where I allow the slope to vary for type
-#prep <- estimateEffect(1:20 ~ label * afam, fit, metadata = out$meta,
-#                       uncertainty = "Global")
-#par(mfrow=c(2,1))
 for (t in 1:30) {
-#plot(predict_topics, covariate = "afam", topics=t, model = fit, method = "continuous", xlab = "Prob. #Afam", moderator = "label", moderator.value = "hateful", linecol = "blue", ylim = c(0, .12), printlegend = F)
-#par(new=TRUE)
 plot(predict_topics, covariate = "afam", topics = t, model = fit, method = "continuous", xlab = "Prob. AAE", moderator = "label", moderator.value = "abusive", linecol = "red", ylim = c(0, .6), printlegend = F)
 par(new=TRUE)
 plot(predict_topics, covariate = "afam", topics = t, model = fit, method = "continuous", xlab = "Prob. AAE", moderator = "label", moderator.value = "normal", linecol = "blue", ylim = c(0, .6), printlegend = F, main = paste("Topic", as.character(t), sep = " ") )
 legend(x="topleft", y = 0.05, c("abusive", "normal"), lwd = 3, col = c("red", "blue"))
 }
-# This plot shows, for a given topic, the expect proportion of the topic by the probability the tweet is written in AAE by the hate classification of tweets. This will be useful once I have identified topics of interest.
-# TODO: Pick 4 topics and make a plot showing different trends for all of them. e.g. four versions of this plot in a faceted grid.
 ```
 
+### Plot topic differences
+This code allows us to see how the top words differ for topics. I do not think it is vary useful in this case. If a content covariate is added to the model then we can see how a topic content varies by the covariate but cannot do so in this case since the model is trained without content covariates.
 ```{r content, echo=TRUE}
 # Now how does topic content vary?
 plot(fit, type="perspectives", topics=c(4,20))
