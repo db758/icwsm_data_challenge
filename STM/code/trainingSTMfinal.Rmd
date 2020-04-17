@@ -71,12 +71,19 @@ fit <- stm(documents = out$documents, vocab = out$vocab, K=K,
 # The model with  K=20, prevalence =~ data.label + s(data.white), content =~ data.label converged after 15 iterations.
 # Now I'm running a model with an interaction between label and prob_afam. It too 22 iterations.
 ```
+
 ## Storing model
 ```{r  store model, echo=TRUE}
-setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge/Rimages")
-save.image(file = "30topicimage.RData")
+# Commented out so doesn't re-run accidentally
+#setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge/Rimages")
+#save.image(file = "30topicimage.RData")
 ```
 
+```{R load model, echo=TRUE}
+# Now only need to run these lines.
+setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge")
+load(file = "Rimages/30topicimage_copy.RData")
+```
 
 ## Analyzing the initial model
 ```{r initial analysis, echo=TRUE}
@@ -146,6 +153,6 @@ legend(x="topleft", y = 0.05, c("abusive", "normal"), lwd = 3, col = c("red", "b
 
 ```{r content, echo=TRUE}
 # Now how does topic content vary?
-plot(fit, type="perspectives", topics=c(4,14))
+plot(fit, type="perspectives", topics=c(4,20))
 #plot(fit, type="perspectives", topics = 4) # This only works if there is a content covariate included.
 ```
