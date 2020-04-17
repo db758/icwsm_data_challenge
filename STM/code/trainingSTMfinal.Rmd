@@ -16,6 +16,10 @@ Note you must change the path to the correct path for the respository on your ma
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(stm)
+library(ggplot2)
+library(stminsights)
+library(ggpubr)
+library(viridis)
 
 setwd("/Users/Tom/Desktop/Projects/icwsm_data_challenge") # Change path to the correct path for the icwsm_data_challenge github repository
 data <- read.csv('race_classifier/data/founta_race_annotated_2.csv') 
@@ -128,6 +132,42 @@ plot(predict_topics, covariate = "afam", topics = t, model = fit, method = "cont
 legend(x="topleft", y = 0.05, c("abusive", "normal"), lwd = 3, col = c("red", "blue"))
 }
 ```
+
+### Final plots
+Based on our analysis of the topics we plot the results for four topics in particular. I use ggplot2 here for more control over the plots. The get_effects function from stminsights package is used here to extract the relevant information.
+```{r final plot, echo=TRUE}
+effects.abusive <- get_effects(predict_topics, variable='afam', type = 'continuous', ci=0.999, moderator = 'label', modval = 'abusive')
+effects.normal <- get_effects(predict_topics, variable='afam', type = 'continuous', ci=0.999, moderator = 'label', modval = 'normal')
+effects <- bind_rows(effects.abusive, effects.normal)
+
+a <- ggplot(effects %>% filter(topic == 4), aes(x = value, y = proportion,
+                   group = moderator,
+                   fill = factor(moderator))) +
+  geom_line() + labs(x="", y="Topic proportion", fill = "", title="Topic 4: ass, bitch, nigga, yall, ugli") +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.05,0.5) + xlim(0,1)
+
+b <- ggplot(effects %>% filter(topic == 20), aes(x = value, y = proportion,
+                   group = moderator,
+                   fill = factor(moderator))) +
+  geom_line() + labs(x="", y="", fill = "", title="Topic 20: fuck, asshol, cunt, slut, bullshit") +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.05,0.5) + xlim(0,1)
+
+c <- ggplot(effects %>% filter(topic == 12), aes(x = value, y = proportion,
+                   group = moderator,
+                   fill = factor(moderator))) +
+  geom_line() + labs(x="P(AAE)", y="Topic proportion", fill = "", title="Topic 12: news, break, syria, attack, death") +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.05,0.5) + xlim(0,1)
+
+d <- ggplot(effects %>% filter(topic == 24), aes(x = value, y = proportion,
+                   group = moderator,
+                   fill = factor(moderator))) +
+  geom_line() + labs(x="P(AAE)", y= "", fill = "", title="Topic 24: best, sure, amaz, interest, releas") +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + theme_bw() + theme(legend.position = "none", plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10)) + ylim(-0.05,0.5) + xlim(0,1)
+  
+ggarrange(a, b, c,d, nrow=2, ncol=2, common.legend = T, legend="right")
+  
+```
+
 
 ### Plot topic differences
 This code allows us to see how the top words differ for topics. I do not think it is vary useful in this case. If a content covariate is added to the model then we can see how a topic content varies by the covariate but cannot do so in this case since the model is trained without content covariates.
