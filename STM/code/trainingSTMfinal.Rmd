@@ -143,26 +143,27 @@ effects <- bind_rows(effects.abusive, effects.normal)
 a <- ggplot(effects %>% filter(topic == 4), aes(x = value, y = proportion,
                    group = moderator,
                    fill = factor(moderator))) +
-  geom_line() + labs(x="", y="Topic proportion", fill = "", title="Topic 4: ass, bitch, nigga, yall, ugli") +
-  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.05,0.5) + xlim(0,1)
+  geom_line() + labs(x="", y="Topic proportion", fill = "", title="Topic 4: *ss, b*tch, n*gga, yall, ugli") +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + scale_fill_viridis_d() + theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.1,0.6) + xlim(0,0.95) 
+a
 
 b <- ggplot(effects %>% filter(topic == 20), aes(x = value, y = proportion,
                    group = moderator,
                    fill = factor(moderator))) +
-  geom_line() + labs(x="", y="", fill = "", title="Topic 20: fuck, asshol, cunt, slut, bullshit") +
-  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.05,0.5) + xlim(0,1)
+  geom_line() + labs(x="", y="", fill = "", title="Topic 20: f*ck, *sshol, c*nt, sl*t, bullsh*t") +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + scale_fill_viridis_d()+ theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.1,0.6) + xlim(0,0.95) 
 
 c <- ggplot(effects %>% filter(topic == 12), aes(x = value, y = proportion,
                    group = moderator,
                    fill = factor(moderator))) +
   geom_line() + labs(x="P(AAE)", y="Topic proportion", fill = "", title="Topic 12: news, break, syria, attack, death") +
-  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.05,0.5) + xlim(0,1)
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + scale_fill_viridis_d()+ theme_bw() + theme(legend.position = "none",plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10))+ ylim(-0.1,0.6) + xlim(0,0.95) 
 
 d <- ggplot(effects %>% filter(topic == 24), aes(x = value, y = proportion,
                    group = moderator,
                    fill = factor(moderator))) +
   geom_line() + labs(x="P(AAE)", y= "", fill = "", title="Topic 24: best, sure, amaz, interest, releas") +
-  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + theme_bw() + theme(legend.position = "none", plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10)) + ylim(-0.05,0.5) + xlim(0,1)
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.8) + scale_fill_viridis_d()+ theme_bw() + theme(legend.position = "none", plot.title = element_text(size=10), axis.title.x = element_text(size=10), axis.title.y = element_text(size=10)) + ylim(-0.1,0.6) + xlim(0,0.95) 
   
 ggarrange(a, b, c,d, nrow=2, ncol=2, common.legend = T, legend="right")
   
