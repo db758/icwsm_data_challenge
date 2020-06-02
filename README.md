@@ -14,7 +14,7 @@ To reproduce the analysis you will need to do the following. Necessary Python an
 
 ## Supplementary Materials
 
-[This](https://docs.google.com/spreadsheets/d/1LIooDBx0RMyHh5DoQ5KF22JUFZnyQzMZHfFG6XMEVqI/edit?usp=sharing) spreadsheet contains information on each topic identified by the STM. The names were given based on independent coding by both authors, followed by discussion. The first sheet contains a list of topics name names, including 5 words with highest FREX score for each topic. The second sheet contains tweet examples for each of the 30 topics, both named and unnamed, as mentioned in the paper. For each topic we list the 5 words with the highest FREX score and highest probability, along with the 10 tweets with the highest proportion of the topic.
+[This](https://docs.google.com/spreadsheets/d/1LIooDBx0RMyHh5DoQ5KF22JUFZnyQzMZHfFG6XMEVqI/edit?usp=sharing) spreadsheet contains information on each topic identified by the STM. The names were given by the authors. The first sheet contains a list of topics names, including 5 words with highest FREX score for each topic. The second sheet contains tweet examples for each of the 30 topics, both named and unnamed, as mentioned in the paper. For each topic we list the 5 words with the highest FREX score and highest probability, along with the 10 tweets with the highest proportion of the topic.
 
 [Figure S1](https://github.com/db758/icwsm_data_challenge/blob/master/STM/notes/final_diagnostics.png) shows the four different diagnostics calculated for topics with `k` ranging from 10 to 60.
 
